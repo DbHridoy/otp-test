@@ -1,0 +1,42 @@
+name: Depoy to vercel with CI/CD pipeline
+
+on:
+  push:
+    branches: 
+      - main
+
+env:
+  NODE_VERSION: 24
+  
+jobs:
+  ci:
+    name: Select machine
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: copy code
+        uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{env.NODE_VERSION}}
+        
+      - name: install dependencies
+        run: npm i
+
+      - name: build project
+        run: npm run build
+  cd:
+    name: select machine
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: copy code
+        uses: actions/checkout@v4
+
+      - name: install vercel
+        run: npm i -g vercel
+
+      - name: deploy code to vercel
+        run: vercel --prod --yes --token=${{secrets.VERCEL_TOKEN}}

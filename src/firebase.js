@@ -38,13 +38,13 @@ if (missingEnvKeys.length > 0) {
 }
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyAjLwQB5TkGapgPczFpd4mpqoXJnL2v9SI",
+  authDomain: "gogo-3b5d9.firebaseapp.com",
+  projectId: "gogo-3b5d9",
+  storageBucket: "gogo-3b5d9.firebasestorage.app",
+  messagingSenderId: "368132898837",
+  appId: "1:368132898837:web:2fca12da8dd13cde9dce1c",
+  measurementId: "G-VRM35D4WDS"
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);

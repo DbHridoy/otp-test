@@ -39,4 +39,4 @@ jobs:
         run: npm i -g vercel
 
       - name: deploy code to vercel
-        run: vercel --prod --yes token=${{secrets.VERCEL_TOKEN}}
+        run: vercel --prod --yes --token=${{secrets.VERCEL_TOKEN}}

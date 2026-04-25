@@ -1,28 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { initializeApp } from "firebase/app";
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-
-// TODO: Replace with your actual Firebase config from the console
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import React, { useState } from 'react';
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { auth } from './firebase';
 
 function App() {
-  const [phone, setPhone] = useState('+1');
+  const [phone, setPhone] = useState('+880');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('phone'); // 'phone' or 'otp'
 
   const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
+    // Always clear old verifier to avoid "container already used" errors
+    if (window.recaptchaVerifier) {
+      window.recaptchaVerifier.clear();
+      window.recaptchaVerifier = null;
+    }
+    
+    try {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible'
+        'size': 'normal'
       });
+    } catch (err) {
+      console.error("Recaptcha initialization failed:", err);
     }
   };
 
@@ -30,32 +27,34 @@ function App() {
     setupRecaptcha();
     const appVerifier = window.recaptchaVerifier;
     try {
+      await appVerifier.render();
       window.confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
       setStep('otp');
-      alert("SMS Sent!");
+      alert("SMS Sent! (If using a test number, use your test code)");
     } catch (err) {
-      console.error(err);
-      alert("Failed to send SMS. Check console.");
+      console.error("Full error object:", err);
+      
+      // Cleanup on error
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+      }
+
+      if (err.code === 'auth/invalid-app-credential') {
+        alert("Error: auth/invalid-app-credential\n\nCheck Firebase Console > Authentication > Settings > Authorized Domains and add 'localhost'.");
+      } else if (err.code === 'auth/too-many-requests') {
+        alert("Error: too-many-requests\n\nFirebase has blocked this number temporarily. PLEASE ADD THIS NUMBER AS A TEST NUMBER in the Firebase Console to bypass this block.");
+      } else {
+        alert(`Failed to send SMS: ${err.code || err.message}`);
+      }
     }
   };
 
   const verifyOtp = async () => {
     try {
       const result = await window.confirmationResult.confirm(otp);
-      const idToken = await result.user.getIdToken();
-
       console.log("Result: ", result)
-      
-      // SEND TO YOUR NODE.JS SERVER
-      // const response = await fetch('http://localhost:5000/verify-token', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ idToken })
-      // });
-      
-      // const data = await response.json();
-      // console.log("Server Response:", data);
-      // alert(`Verified! Server says user is: ${data.uid}`);
+      alert("Verified successfully!");
     } catch (err) {
       alert("Invalid OTP");
     }
@@ -64,17 +63,31 @@ function App() {
   return (
     <div style={{ padding: '50px' }}>
       <h2>Firebase OTP Tester</h2>
-      <div id="recaptcha-container"></div>
+      <p>Enter number in E.164 format (e.g., +8801712345678)</p>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <div id="recaptcha-container"></div>
+      </div>
 
       {step === 'phone' ? (
         <>
-          <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+123456789" />
-          <button onClick={sendSms}>Send SMS</button>
+          <input 
+            value={phone} 
+            onChange={e => setPhone(e.target.value)} 
+            placeholder="+123456789" 
+            style={{ padding: '10px', width: '200px', marginRight: '10px' }}
+          />
+          <button onClick={sendSms} style={{ padding: '10px' }}>Send SMS</button>
         </>
       ) : (
         <>
-          <input value={otp} onChange={e => setOtp(e.target.value)} placeholder="Enter 6-digit OTP" />
-          <button onClick={verifyOtp}>Verify & Send to Server</button>
+          <input 
+            value={otp} 
+            onChange={e => setOtp(e.target.value)} 
+            placeholder="Enter 6-digit OTP" 
+            style={{ padding: '10px', width: '200px', marginRight: '10px' }}
+          />
+          <button onClick={verifyOtp} style={{ padding: '10px' }}>Verify</button>
         </>
       )}
     </div>
